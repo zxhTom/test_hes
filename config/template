@@ -1,0 +1,24 @@
+{
+    "base_url": "http://127.0.0.1:8080",
+    "redis":{
+        "host": "127.0.0.1",
+        "port": "6379",
+        "database": "0",
+        "password": "demopassword"
+    },
+    "db":{
+        "host": "127.0.0.1",
+        "port": "6543",
+        "database": "hello",
+        "user":"hello",
+        "password": "hello"
+    },
+    "auth": {
+        "login_path": "/api/auth/login",
+        "username": "testuser",
+        "password": "testpass",
+        "token_key": "access_token"
+    },
+    "timeout": 10,
+    "retry_times": 3
+}    
