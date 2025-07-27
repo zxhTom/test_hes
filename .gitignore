@@ -171,3 +171,7 @@ local_settings.ini
 secrets.ini
 *.env
 .env.local
+
+[test]
+allure_results
+assets

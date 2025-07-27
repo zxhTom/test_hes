@@ -1,8 +1,13 @@
 import time
-
+import allure
+import json
 import pytest
 
 
+@allure.feature("export function")
+@allure.story("test export task")
+@allure.title("Export")
+@allure.severity(allure.severity_level.CRITICAL)
 @pytest.mark.skip(reason="暂时禁用，avoid log record")
 def test_get_system_configuration(api_client, env_config, pg_connect):
     """
@@ -79,6 +84,12 @@ def test_get_system_configuration(api_client, env_config, pg_connect):
         "pageSize": 171,
     }
     task_query = "select task_id,export_name from sa.sys_export_task where task_id=%s"
+    with allure.step("task params"):
+        allure.attach(
+            body=json.dumps(str(payload), indent=2, ensure_ascii=False),
+            name="export params payload",
+            attachment_type=allure.attachment_type.JSON,
+        )
     response = api_client.post(
         "/api/meters/loadTableExportBackGroud?exportType=Excel", json=payload
     )

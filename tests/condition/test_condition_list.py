@@ -1,6 +1,12 @@
 from pytest_check import check
+import allure
+import json
 
 
+@allure.feature("generate and compare function")
+@allure.story("generate random conditon and value , test right")
+@allure.title("Condition Generator")
+@allure.severity(allure.severity_level.CRITICAL)
 def test_get_condition_list(api_client, env_config, pg_connect):
     support_menus_sql = "select distinct menu_id from sys_query_field"
     cur = pg_connect.cursor()
@@ -19,6 +25,12 @@ def test_get_condition_list(api_client, env_config, pg_connect):
                 "parentCode": str(org[0]),
                 "fieldLabel": "Group ID",
             }
+            with allure.step("get conditions in menu and group by loop"):
+                allure.attach(
+                    body=json.dumps(payload, indent=2, ensure_ascii=False),
+                    name="within group conditions,menu:" + str(menuId),
+                    attachment_type=allure.attachment_type.JSON,
+                )
             response = api_client.post(
                 "/api/dynamic/condition/selectConditionableFieldEntire", json=payload
             )
@@ -39,6 +51,12 @@ def test_get_condition_list(api_client, env_config, pg_connect):
         payload = {
             "menuId": str(menuId),
         }
+        with allure.step("get conditions only in menu"):
+            allure.attach(
+                body=json.dumps(payload, indent=2, ensure_ascii=False),
+                name="single menu conditon,menu:" + str(menuId),
+                attachment_type=allure.attachment_type.JSON,
+            )
         response = api_client.post(
             "/api/dynamic/condition/selectConditionableFieldEntire", json=payload
         )

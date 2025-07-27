@@ -1,19 +1,28 @@
 import random
 import pytest
-
+import allure
+import json
 from pytest_check import check
 from utils.date import generate_random_time_range as timerange
 
 
+@allure.feature("compare function")
+@allure.story("device register compare successful")
+@allure.title("valid device register compare")
+@allure.severity(allure.severity_level.CRITICAL)
 def test_compare_device(api_client, env_config, pg_connect):
     cur = pg_connect.cursor()
     multiple_meter_sql = "select cm.meter_id from c_meter cm where cm.is_delete ='01' order by random() limit 10 	;"
     cur.execute(multiple_meter_sql)
     tables = cur.fetchall()
     meter_id_list = [int(row[0]) for row in tables]
+    with allure.step("get random meter list 10"):
+        allure.attach(str(meter_id_list), "MeterIdList")
     single_group_sql = "select pg.group_id from p_group pg where pg.group_type ='2' order by random() limit 1"
     cur.execute(single_group_sql)
     group_id = int(cur.fetchone()[0])
+    with allure.step("get random register"):
+        allure.attach(str(group_id), "Group")
     start, end = timerange(min_duration_hours=72, max_duration_hours=168)
     payload = {
         "deviceIds": meter_id_list,
@@ -22,6 +31,12 @@ def test_compare_device(api_client, env_config, pg_connect):
         "groupId": group_id,
     }
     print(payload)
+    with allure.step("record real payload"):
+        allure.attach(
+            body=json.dumps(payload, indent=2, ensure_ascii=False),
+            name="request payload",
+            attachment_type=allure.attachment_type.JSON,
+        )
     response = api_client.post(
         "/api/kpi/device/deviceRegisterLatestValue", json=payload
     )
