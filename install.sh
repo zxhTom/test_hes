@@ -11,3 +11,6 @@ pip install pytest-testreport
 pip install pytest-cov
 pip install pytest-xdist
 pip install allure-pytest
+
+# utils
+pip install stringcase

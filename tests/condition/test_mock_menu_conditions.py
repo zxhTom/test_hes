@@ -41,7 +41,7 @@ def generate_value(field_type, field_name, options, component_props, multipeable
             elif component_props != "ConSelect" and component_props != "ConTree":
                 samples = [item[field_name] for item in list]
                 samples = [x for x in samples if x is not None]
-                if(len(samples)==0):
+                if len(samples) == 0:
                     samples = [1, 2, 4, 5]
         except Exception as e:
             samples = [1, 2, 4, 5]
@@ -130,62 +130,53 @@ template_param = {
 @allure.title("Condition Generator And Search")
 @allure.severity(allure.severity_level.CRITICAL)
 def test_generate_noneandmulptile_condition(project_root, api_client, pg_connect):
-    try:
-        print("@@@@@---->>>>")
-        print(project_root)
-        # 读取JSON文件
-        with open(
-            os.path.join(project_root, "config", "request.json"), "r", encoding="utf-8"
-        ) as f:
-            data = json.load(f)  # 自动解析为Python列表
-            # 遍历数组
-            for item in data:
-                if isinstance(item, dict):
-                    menuId = item.get("menuId")
-                    url = item.get("url")
-                    print(f"ID: {item.get('menuId')}, Name: {url}")
+    print("@@@@@---->>>>")
+    print(project_root)
+    # 读取JSON文件
+    with open(
+        os.path.join(project_root, "config", "request.json"), "r", encoding="utf-8"
+    ) as f:
+        data = json.load(f)  # 自动解析为Python列表
+        # 遍历数组
+        for item in data:
+            if isinstance(item, dict):
+                menuId = item.get("menuId")
+                url = item.get("url")
+                print(f"ID: {item.get('menuId')}, Name: {url}")
 
-                    fields = fetch_query_fields(menuId, pg_connect)
-                    conditions = []
-                    with allure.step("generate none paramter condition page"):
-                        allure.attach(
-                            body=json.dumps(
-                                template_param, indent=2, ensure_ascii=False
-                            ),
-                            name="menu=" + str(menuId),
-                            attachment_type=allure.attachment_type.JSON,
-                        )
-                    template_param["conditions"] = conditions
-                    response = api_client.post(url, json=template_param)  # 10秒超时
-                    # print(response.json())
-                    list = response.json()["data"]["list"]
-                    # 生成条件列表
-                    conditions = generate_json_output(list, fields)
-                    template_param["conditions"] = conditions
-
-                    a_values = [
-                        item["fieldKey"] for item in conditions if "fieldKey" in item
-                    ]
-
-                    with allure.step(
-                        "will generate some condition,len=" + str(len(a_values))
-                    ):
-                        allure.attach(
-                            body=json.dumps(
-                                template_param, indent=2, ensure_ascii=False
-                            ),
-                            name="within group conditions,menu:" + str(menuId),
-                            attachment_type=allure.attachment_type.JSON,
-                        )
-                    response = api_client.post(
-                        url, json=template_param, timeout=30  # 10秒超时
+                fields = fetch_query_fields(menuId, pg_connect)
+                conditions = []
+                with allure.step("generate none paramter condition page"):
+                    allure.attach(
+                        body=json.dumps(template_param, indent=2, ensure_ascii=False),
+                        name="menu=" + str(menuId),
+                        attachment_type=allure.attachment_type.JSON,
                     )
-                    if response.json()["httpStatus"] == 200:
-                        assert True
-                    else:
-                        print(response.json())
-                        assert False
+                template_param["conditions"] = conditions
+                response = api_client.post(url, json=template_param)  # 10秒超时
+                # print(response.json())
+                list = response.json()["data"]["list"]
+                # 生成条件列表
+                conditions = generate_json_output(list, fields)
+                template_param["conditions"] = conditions
 
-    except Exception as e:
-        print(f"程序出错: {str(e)}")
-        assert False
+                a_values = [
+                    item["fieldKey"] for item in conditions if "fieldKey" in item
+                ]
+
+                with allure.step(
+                    "will generate some condition,len=" + str(len(a_values))
+                ):
+                    allure.attach(
+                        body=json.dumps(template_param, indent=2, ensure_ascii=False),
+                        name="within group conditions,menu:" + str(menuId),
+                        attachment_type=allure.attachment_type.JSON,
+                    )
+                response = api_client.post(
+                    url, json=template_param, timeout=30  # 10秒超时
+                )
+                if response.json()["httpStatus"] == 200:
+                    assert True
+                else:
+                    print(response.json())
+                    assert False

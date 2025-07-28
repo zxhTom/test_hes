@@ -176,3 +176,4 @@ secrets.ini
 [test]
 allure_results
 assets
+reports
