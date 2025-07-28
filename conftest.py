@@ -8,6 +8,14 @@ import json
 pytest_plugins = [
     "fixtures.database",  # 自动发现 fixtures/database.py 中的 Fixture
 ]
+
+
+@pytest.fixture(scope="session")
+def project_root():
+    """返回项目根目录路径"""
+    return os.path.dirname(__file__)
+
+
 # 环境配置管理
 @pytest.fixture(scope="session")
 def env_config():
