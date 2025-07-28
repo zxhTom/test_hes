@@ -164,7 +164,8 @@ test-results/
 allure-results/
 *.xml
 *.html
-*.json
+# *.json
+config/private/
 
 # Local development configs
 local_settings.ini

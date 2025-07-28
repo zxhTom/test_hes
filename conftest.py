@@ -13,7 +13,7 @@ pytest_plugins = [
 def env_config():
     """根据环境变量加载对应的配置"""
     env = os.getenv("TEST_ENV", "dev")
-    config_path = Path(__file__).parent / "config" / f"{env}.json"
+    config_path = Path(__file__).parent / "config/private" / f"{env}.json"
 
     try:
         with open(config_path) as f:
