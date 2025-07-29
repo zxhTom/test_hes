@@ -31,7 +31,6 @@ def generate_value(field_type, field_name, options, component_props, multipeable
         field_name = stringcase.camelcase(field_name)
         samples = [1, 2, 4, 5]
         try:
-            print(component_props)
             if options != "":
                 cursor = pg_connect.cursor()
                 multiple_type_sql = "select code from sys_code_item sci where sci.table_id = (select table_id from sys_code_table sct where sct.name=%s)"
@@ -45,7 +44,6 @@ def generate_value(field_type, field_name, options, component_props, multipeable
                     samples = [1, 2, 4, 5]
         except Exception as e:
             samples = [1, 2, 4, 5]
-        print(samples)
         if multipeable:
             return random.sample(samples, min(2, len(samples)))
         return random.choice(samples)
@@ -169,12 +167,10 @@ def test_generate_noneandmulptile_condition(project_root, api_client, pg_connect
                 ):
                     allure.attach(
                         body=json.dumps(template_param, indent=2, ensure_ascii=False),
-                        name="within group conditions,menu:" + str(menuId),
+                        name=str(url),
                         attachment_type=allure.attachment_type.JSON,
                     )
-                response = api_client.post(
-                    url, json=template_param, timeout=30  # 10秒超时
-                )
+                response = api_client.post(url, json=template_param)  # 10秒超时
                 if response.json()["httpStatus"] == 200:
                     assert True
                 else:

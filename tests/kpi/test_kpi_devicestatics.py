@@ -33,7 +33,7 @@ def test_get_deviceTypeStatics(generate_test_pairs, api_client, env_config, pg_c
     with allure.step("first group payload"):
         allure.attach(
             body=json.dumps(before, indent=2, ensure_ascii=False),
-            name="requst payload",
+            name="/api/kpi/device/deviceTypeStatics",
             attachment_type=allure.attachment_type.JSON,
         )
     response = api_client.post("/api/kpi/device/deviceTypeStatics", json=before)
@@ -41,7 +41,7 @@ def test_get_deviceTypeStatics(generate_test_pairs, api_client, env_config, pg_c
     with allure.step("after group payload"):
         allure.attach(
             body=json.dumps(after, indent=2, ensure_ascii=False),
-            name="requst payload",
+            name="/api/kpi/device/deviceTypeStatics",
             attachment_type=allure.attachment_type.JSON,
         )
     response = api_client.post("/api/kpi/device/deviceTypeStatics", json=after)
@@ -79,7 +79,7 @@ def test_get_multiple_type_valid(deviceTypeList, api_client, env_config, pg_conn
         with allure.step("loop single deviceType"):
             allure.attach(
                 body=json.dumps(typeBody, indent=2, ensure_ascii=False),
-                name="deviceType payload",
+                name="/api/kpi/device/deviceTypeStatics",
                 attachment_type=allure.attachment_type.JSON,
             )
         response = api_client.post("/api/kpi/device/deviceTypeStatics", json=typeBody)
@@ -151,7 +151,7 @@ def test_get_top_condition(
     with allure.step("statics paramter"):
         allure.attach(
             body=json.dumps((item), indent=2, ensure_ascii=False),
-            name="request payload",
+            name="/api/kpi/device/deviceTypeStatics",
             attachment_type=allure.attachment_type.JSON,
         )
     response = api_client.post("/api/kpi/device/deviceTypeStatics", json=item)
