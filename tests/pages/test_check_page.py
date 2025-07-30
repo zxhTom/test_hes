@@ -8,6 +8,7 @@ urls = [
     ("/api/grid-management/tran/query"),
     ("/api/grid-management/line/query"),
     ("/api/tmnl-run/page"),
+    ("/api/metering-task/get-metering-task"),
 ]
 
 

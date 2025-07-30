@@ -14,3 +14,4 @@ pip install allure-pytest
 
 # utils
 pip install stringcase
+pip install jsonpath_rw

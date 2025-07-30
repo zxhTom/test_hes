@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 import psycopg2
 from psycopg2 import sql
 import requests
-import random
 import stringcase
+from jsonpath_rw import parse
 
 
 def fetch_query_fields(menuId, pg_connect):
@@ -25,9 +25,12 @@ def fetch_query_fields(menuId, pg_connect):
         return cursor.fetchall()
 
 
-def generate_value(field_type, field_name, options, component_props, multipeable, list):
+def generate_value(
+    field_type, field_name, options, component_props, multipeable, list, cons
+):
     """根据字段类型生成示例值"""
     if field_type == "String":
+        origin_field_name = field_name
         field_name = stringcase.camelcase(field_name)
         samples = [1, 2, 4, 5]
         try:
@@ -42,6 +45,20 @@ def generate_value(field_type, field_name, options, component_props, multipeable
                 samples = [x for x in samples if x is not None]
                 if len(samples) == 0:
                     samples = [1, 2, 4, 5]
+            else:
+                filter_condition = next(
+                    (row for row in cons if origin_field_name == row["conditionId"]),
+                    None,
+                )
+                if (
+                    filter_condition["componentSelectList"] != None
+                    and len(filter_condition["componentSelectList"]) > 0
+                ):
+
+                    jsonpath_expr = parse("$..code")
+                    samples = [
+                        match.value for match in jsonpath_expr.find(filter_condition)
+                    ]
         except Exception as e:
             samples = [1, 2, 4, 5]
         if multipeable:
@@ -73,7 +90,7 @@ def generate_operator(field_type, multipeable):
     return "in" if multipeable else "="
 
 
-def generate_json_output(list, fields):
+def generate_json_output(list, conditions, fields):
     """生成最终JSON输出"""
     result = []
     for field in fields:
@@ -93,7 +110,13 @@ def generate_json_output(list, fields):
                 "fieldType": field_type,
                 "operator": generate_operator(field_type, is_multi),
                 "values": generate_value(
-                    field_type, field_name, options, component_props, is_multi, list
+                    field_type,
+                    field_name,
+                    options,
+                    component_props,
+                    is_multi,
+                    list,
+                    conditions,
                 ),
             }
         )
@@ -128,8 +151,6 @@ template_param = {
 @allure.title("Condition Generator And Search")
 @allure.severity(allure.severity_level.CRITICAL)
 def test_generate_noneandmulptile_condition(project_root, api_client, pg_connect):
-    print("@@@@@---->>>>")
-    print(project_root)
     # 读取JSON文件
     with open(
         os.path.join(project_root, "config", "request.json"), "r", encoding="utf-8"
@@ -152,10 +173,15 @@ def test_generate_noneandmulptile_condition(project_root, api_client, pg_connect
                     )
                 template_param["conditions"] = conditions
                 response = api_client.post(url, json=template_param)  # 10秒超时
+                condition_res = api_client.post(
+                    "/api/dynamic/condition/selectConditionableFieldEntire",
+                    json={"menuId": menuId},
+                )
+                cons = condition_res.json()["data"]
                 # print(response.json())
                 list = response.json()["data"]["list"]
                 # 生成条件列表
-                conditions = generate_json_output(list, fields)
+                conditions = generate_json_output(list, cons, fields)
                 template_param["conditions"] = conditions
 
                 a_values = [
