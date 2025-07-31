@@ -177,3 +177,4 @@ secrets.ini
 allure_results
 assets
 reports
+.token

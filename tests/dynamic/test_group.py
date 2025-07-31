@@ -6,13 +6,46 @@ import random
 from jsonpath_rw import parse
 from psycopg2 import sql
 
+urls = [
+    "/api/quality/set",
+    "/api/quality/get",
+    "/api/localport/get",
+    "/api/localport/set",
+]
+
+
+@allure.feature("limit group")
+@allure.story("dynamic group limit by device's protocol")
+@allure.title("Limit Default Group")
+@allure.severity(allure.severity_level.CRITICAL)
+@pytest.mark.parametrize("url", urls)
+def test_get_dynamic_without_limit_group(url, project_root, api_client, pg_connect):
+    body = {}
+    with allure.step("search default dynamic groups folder"):
+        allure.attach(
+            body=json.dumps(body, indent=2, ensure_ascii=False),
+            name="default",
+            attachment_type=allure.attachment_type.JSON,
+        )
+    response = api_client.post(url, json=body)  # 10秒超时
+    with allure.step("search default dynamic groups response"):
+        allure.attach(
+            body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+            name="meters",
+            attachment_type=allure.attachment_type.JSON,
+        )
+    with check:
+        assert response.json()["httpStatus"] == 200
+    with check:
+        assert len(response.json()["data"][0]["groupIdList"]) > 0
+
 
 @allure.feature("limit group")
 @allure.story("dynamic group limit by device's protocol")
 @allure.title("Limit Device Protocol Group")
 @allure.severity(allure.severity_level.CRITICAL)
-# @pytest.mark.skip(reason="developping，avoid log record")
-def test_get_dynamic_limit_protocol_group(project_root, api_client, pg_connect):
+@pytest.mark.parametrize("url", urls)
+def test_get_dynamic_limit_protocol_group(url, project_root, api_client, pg_connect):
     cur = pg_connect.cursor()
     multiple_type_sql = """
     select 
@@ -35,7 +68,7 @@ def test_get_dynamic_limit_protocol_group(project_root, api_client, pg_connect):
     tables = cur.fetchall()
     meters = [row for row in tables if row[0] == "01"]
     tmnls = [row for row in tables if row[0] == "02"]
-    url = "/api/quality/set"
+    # url = "/api/quality/set"
     sub_meters = random.sample(meters, min(2, len(meters)))
     sub_meter_ids = [str(row[1]) for row in sub_meters]
     sub_meter_protocol_ids = [int(str(row[2])) for row in sub_meters if row[2] != None]
@@ -110,6 +143,7 @@ def test_get_dynamic_limit_protocol_group(project_root, api_client, pg_connect):
         """
     cur.execute(query, (groups, sub_tmnl_protocol_ids))
     tables = cur.fetchall()
-    groups.remove(-1)
+    if -1 in groups:
+        groups.remove(-1)
     with check:
         assert len(tables) == len(groups)

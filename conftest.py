@@ -78,7 +78,7 @@ def token_manager(env_config):
 
 
 # API 客户端 fixture
-@pytest.fixture
+@pytest.fixture(scope="session")
 def api_client(env_config, token_manager):
     """返回配置好的 API 客户端"""
 
