@@ -6,6 +6,53 @@ from pytest_check import check
 from utils.date import generate_random_time_range as timerange
 
 
+@allure.feature("registers function")
+@allure.story("base devices get registers")
+@allure.title("valid device register compare")
+@allure.severity(allure.severity_level.CRITICAL)
+def test_get_register_from_meter(api_client, env_config, pg_connect):
+    type_url = "/api/profile/meter/profileType"
+    profile_list_response = api_client.post(type_url, json={})
+    with check:
+        assert profile_list_response.json()["httpStatus"] == 200
+    with allure.step("profile request payload"):
+        allure.attach(
+            body=json.dumps(profile_list_response.json(), indent=2, ensure_ascii=False),
+            name="request response",
+            attachment_type=allure.attachment_type.JSON,
+        )
+    profiles = profile_list_response.json()["data"]
+    profileids = [row.get("groupId") for row in profiles]
+    url = "/api/profile/meter/DateItem"
+    cur = pg_connect.cursor()
+    multiple_meter_sql = "select cm.meter_id from c_meter cm where cm.is_delete ='01' order by random() limit 10 	;"
+    cur.execute(multiple_meter_sql)
+    tables = cur.fetchall()
+    meter_id_list = [int(row[0]) for row in tables]
+    for profileid in profileids:
+        meterid = random.choice(meter_id_list)
+        body = {"meterId": meterid, "profileId": profileid}
+        response = api_client.post(type_url, json={})
+        with check:
+            assert response.json()["httpStatus"] == 200
+        with allure.step("meter dataitem list"):
+            allure.attach(
+                body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+                name="dataitem response",
+                attachment_type=allure.attachment_type.JSON,
+            )
+        body = {"meterIds": meter_id_list, "profileId": profileid}
+        response = api_client.post(type_url, json={})
+        with check:
+            assert response.json()["httpStatus"] == 200
+        with allure.step("meters dataitem list"):
+            allure.attach(
+                body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+                name="dataitem response",
+                attachment_type=allure.attachment_type.JSON,
+            )
+
+
 @allure.feature("compare function")
 @allure.story("device register compare successful")
 @allure.title("valid device register compare")

@@ -162,6 +162,7 @@ Desktop.ini
 .pytest_cache/
 test-results/
 allure-results/
+allure_report/
 *.xml
 *.html
 # *.json
@@ -175,6 +176,7 @@ secrets.ini
 
 [test]
 allure_results
+allure_report
 assets
 reports
 .token
