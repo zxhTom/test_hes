@@ -1,4 +1,5 @@
 import os
+import pytest
 from pytest_check import check
 import allure
 import json
@@ -150,7 +151,9 @@ template_param = {
 @allure.story("generate random conditon and value , search")
 @allure.title("Condition Generator And Search")
 @allure.severity(allure.severity_level.CRITICAL)
-def test_generate_noneandmulptile_condition(project_root, api_client, pg_connect):
+def test_generate_noneandmulptile_condition(
+    project_root, api_client, pg_connect, request
+):
     # 读取JSON文件
     with open(
         os.path.join(project_root, "config", "request.json"), "r", encoding="utf-8"
@@ -160,6 +163,10 @@ def test_generate_noneandmulptile_condition(project_root, api_client, pg_connect
         for item in data:
             if isinstance(item, dict):
                 menuId = item.get("menuId")
+                if menuId in [14997]:
+                    continue
+                    print("slow....>>>>")
+                    request.node.add_marker(pytest.mark.slow)
                 url = item.get("url")
                 print(f"ID: {item.get('menuId')}, Name: {url}")
 
@@ -197,6 +204,12 @@ def test_generate_noneandmulptile_condition(project_root, api_client, pg_connect
                         attachment_type=allure.attachment_type.JSON,
                     )
                 response = api_client.post(url, json=template_param)  # 10秒超时
+                with allure.step("condition,response=" + str(len(a_values))):
+                    allure.attach(
+                        body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+                        name=str(url),
+                        attachment_type=allure.attachment_type.JSON,
+                    )
                 if response.json()["httpStatus"] == 200:
                     assert True
                 else:

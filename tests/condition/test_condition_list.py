@@ -72,3 +72,9 @@ def test_get_condition_list(api_client, env_config, pg_connect):
                     print("---------------------------")
                     print(menuId)
                     print(item)
+                    with allure.step("get conditions errors, menu" + str(menuId)):
+                        allure.attach(
+                            body=json.dumps(payload, indent=2, ensure_ascii=False),
+                            name="error conditon,menu:" + str(menuId),
+                            attachment_type=allure.attachment_type.JSON,
+                        )

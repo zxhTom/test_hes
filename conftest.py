@@ -33,9 +33,12 @@ def env_config():
 # Token 管理器
 class TokenManager:
     def __init__(self, env_config):
+        env = os.getenv("TEST_ENV", "dev")
         self.env_config = env_config
         self._token = None
-        self._token_file = Path(".token")
+        self._token_file = Path(f".token/{env}.token")
+        if not self._token_file.parent.exists():
+            self._token_file.parent.mkdir(parents=True, exist_ok=True)
 
     def get_token(self):
         """获取 token，如果不存在或已过期则重新获取"""
