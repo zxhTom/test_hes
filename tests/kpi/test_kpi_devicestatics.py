@@ -146,3 +146,80 @@ def test_get_top_condition(
     response = api_client.post(url, json=item)
     with check:
         assert response.json()["data"]["total"] == kpiTotal
+
+
+device_types = [
+    ("01", "/api/meters/loadDeviceInfoAndOnlineStatus"),
+    ("02", "/api/tmnl-run/page"),
+    (
+        "03",
+        "/api/substation/list",
+    ),
+    (
+        "05",
+        "/api/grid-management/line/query",
+    ),
+    (
+        "04",
+        "/api/grid-management/tran/query",
+    ),
+]
+meter_param = {
+    "pageNum": 1,
+    "pageSize": 2,
+    "orgNo": "100",
+    "conditions": [
+        {
+            "fieldKey": "is_active",
+            "fieldType": "Boolean",
+            "operator": "in",
+            "values": ["true"],
+        }
+    ],
+    "lineIds": [],
+    "tranIds": [],
+    "substationIds": [],
+}
+
+
+@allure.feature("coordinate function")
+@allure.story("compare horizontal total")
+@allure.title("Compare total")
+@allure.severity(allure.severity_level.CRITICAL)
+@pytest.mark.parametrize("deviceType,url", device_types)
+def test_coordinate_total(deviceType, url, api_client, env_config, pg_connect):
+    statics_body = {
+        "orgNo": "100",
+        "lineIds": [],
+        "tranIds": [],
+        "substationIds": [],
+        "deviceType": "02",
+    }
+    statics_body["deviceType"] = deviceType
+    statics_body.update(
+        {k: meter_param[k] for k in statics_body.keys() & meter_param.keys()}
+    )
+    statics_url = "/api/kpi/device/deviceTypeStatics"
+    with allure.step("statics payload"):
+        allure.attach(
+            body=json.dumps(statics_body, indent=2, ensure_ascii=False),
+            name="deviceTypeStatics,url="+statics_url,
+            attachment_type=allure.attachment_type.JSON,
+        )
+    statics_response = api_client.post(statics_url, json=statics_body)
+    with allure.step("statics response"):
+        allure.attach(
+            body=json.dumps(statics_response.json(), indent=2, ensure_ascii=False),
+            name="deviceTypeStatics,url="+statics_url,
+            attachment_type=allure.attachment_type.JSON,
+        )
+
+    with check:
+        assert statics_response.json()["httpStatus"] == 200
+    device_response = api_client.post(url, json=meter_param)
+    with check:
+        assert device_response.json()["httpStatus"] == 200
+    assert (
+        device_response.json()["data"]["total"]
+        == statics_response.json()["data"]["total"]
+    )
