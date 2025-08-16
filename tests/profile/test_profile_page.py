@@ -1,7 +1,9 @@
 import pytest
 import allure
 import json
-from pytest_check import check
+
+# from pytest_check import check
+from utils.check_utils import check
 from jsonpath_rw import parse
 import random
 from utils.date import generate_random_time_range as timerange
