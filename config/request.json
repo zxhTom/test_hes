@@ -20,7 +20,7 @@
     "url":"/api/grid-management/tran/query"
   },
   {
-    "menuId":14997,
+    "menuId":13866,
     "url":"/api/communication/listPage"
   },
   {
@@ -42,5 +42,9 @@
   {
     "menuId":14083,
     "url":"/api/batchTask/page"
+  },
+  {
+    "menuId":14984,
+    "url":"/api/firmware/page"
   }
 ]

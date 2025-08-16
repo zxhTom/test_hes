@@ -18,7 +18,7 @@ def fetch_query_fields(menuId, pg_connect):
     with pg_connect.cursor() as cursor:
         query = sql.SQL(
             """
-            SELECT field_type, condition_id,options,component_props,condition_id, multipleable 
+            SELECT field_type, field_name,options,component_props,condition_id, multipleable ,ambiguous
             FROM sys_query_field where menu_id=%s
         """
         )
@@ -84,11 +84,15 @@ def generate_value(
         return "default_value"
 
 
-def generate_operator(field_type, multipeable):
+def generate_operator(field_type, multipeable, ambiguous):
     """生成操作符"""
     if field_type == "Date":
         return "between"
-    return "in" if multipeable else "="
+    if multipeable:
+        return "in"
+    if ambiguous:
+        return "like"
+    return "="
 
 
 def generate_json_output(list, conditions, fields):
@@ -102,14 +106,33 @@ def generate_json_output(list, conditions, fields):
             component_props,
             condition_id,
             multipeable,
+            ambiguous,
         ) = field
         is_multi = multipeable == 1  # 假设multipeable是整数类型
+        is_ambiguous = ambiguous == 1  # 假设multipeable是整数类型
+
+        if component_props == "ConSelect" or component_props == "ConTree":
+
+            samples = [
+                selectList
+                for item in conditions
+                if item["fieldName"] == field_name
+                for selectList in item["componentSelectList"]
+            ]
+            if len(samples) <= 0:
+                with allure.step("check condition"):
+                    allure.attach(
+                        body=json.dumps(conditions, indent=2, ensure_ascii=False),
+                        name=field_name,
+                        attachment_type=allure.attachment_type.JSON,
+                    )
+                assert False
 
         result.append(
             {
                 "fieldKey": condition_id,
                 "fieldType": field_type,
-                "operator": generate_operator(field_type, is_multi),
+                "operator": generate_operator(field_type, is_multi, is_ambiguous),
                 "values": generate_value(
                     field_type,
                     field_name,
@@ -163,7 +186,7 @@ def test_generate_noneandmulptile_condition(
         for item in data:
             if isinstance(item, dict):
                 menuId = item.get("menuId")
-                if menuId in [14997]:
+                if menuId in [114997]:
                     continue
                     print("slow....>>>>")
                     request.node.add_marker(pytest.mark.slow)
@@ -175,11 +198,18 @@ def test_generate_noneandmulptile_condition(
                 with allure.step("generate none paramter condition page"):
                     allure.attach(
                         body=json.dumps(template_param, indent=2, ensure_ascii=False),
-                        name="menu=" + str(menuId),
+                        name=url,
                         attachment_type=allure.attachment_type.JSON,
                     )
                 template_param["conditions"] = conditions
                 response = api_client.post(url, json=template_param)  # 10秒超时
+                with allure.step("none condition,response"):
+                    allure.attach(
+                        body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+                        name=str(url),
+                        attachment_type=allure.attachment_type.JSON,
+                    )
+                assert response.json()["httpStatus"]==200
                 condition_res = api_client.post(
                     "/api/dynamic/condition/selectConditionableFieldEntire",
                     json={"menuId": menuId},

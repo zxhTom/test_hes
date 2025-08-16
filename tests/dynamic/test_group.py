@@ -71,7 +71,7 @@ def test_get_dynamic_limit_protocol_group(url, project_root, api_client, pg_conn
     # url = "/api/quality/set"
     sub_meters = random.sample(meters, min(2, len(meters)))
     sub_meter_ids = [str(row[1]) for row in sub_meters]
-    sub_meter_protocol_ids = [int(str(row[2])) for row in sub_meters if row[2] != None]
+    sub_meter_protocol_ids = [int(str(row[2])) for row in sub_meters if row[2] is not None]
     sub_tmnl = random.sample(tmnls, min(2, len(tmnls)))
     sub_tmnl_ids = [str(row[1]) for row in sub_tmnl]
     sub_tmnl_protocol_ids = [int(str(row[2])) for row in sub_tmnl if row[2] != None]
@@ -108,6 +108,10 @@ def test_get_dynamic_limit_protocol_group(url, project_root, api_client, pg_conn
         """
     cur.execute(query, (groups, sub_meter_protocol_ids))
     tables = cur.fetchall()
+    dbs = [int(str(row[0])) for row in tables]
+    diff1 = list(set(groups) - set(dbs))
+    print(diff1)
+    print(">>>>>")
     with check:
         assert len(tables) == len(groups)
     body = {"meterType": "02", "deviceIdList": sub_tmnl_ids}

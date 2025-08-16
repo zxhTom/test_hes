@@ -3,13 +3,16 @@ import allure
 import json
 import pytest
 
+export_url = [("/api/meters/loadTableExportBackGroud")]
+
 
 @allure.feature("export function")
 @allure.story("test export task")
 @allure.title("Export")
 @allure.severity(allure.severity_level.CRITICAL)
-@pytest.mark.skip(reason="暂时禁用，avoid log record")
-def test_get_system_configuration(api_client, env_config, pg_connect):
+# @pytest.mark.skip(reason="暂时禁用，avoid log record")
+@pytest.mark.parametrize("url", export_url)
+def test_get_system_configuration(url, api_client, env_config, pg_connect):
     """
     test export
     valid weather create record of export task
@@ -17,71 +20,9 @@ def test_get_system_configuration(api_client, env_config, pg_connect):
     """
     payload = {
         "conditions": [],
-        "displays": [
-            "Online Status",
-            "Status",
-            "Relay Status",
-            "Device ID.",
-            "Model",
-            "Vendor",
-            "Organization",
-            "State",
-            "Sub-state",
-            "Comm Mode",
-            "Protocol",
-            "City",
-            "Zone",
-            "Street",
-            "Group(Tag)",
-            "Created On",
-            "ActiveSince",
-            "DeActivated From",
-            "Created By",
-            "Module Firmware",
-            "Nonlegal application Firmware",
-            "Legal Metrological Firmware",
-            "Hardware Version",
-            "Customer ID",
-            "Customer Type",
-            "Security Version",
-            "Security Version",
-            "Security Suite",
-            "Security Policy",
-        ],
-        "fields": [
-            "onlineStatus",
-            "isActiveLabel",
-            "relayStatusLabel",
-            "serialNo",
-            "modelCode",
-            "mfgName",
-            "orgName",
-            "cycleStatusLabel",
-            "cycleSubStatusLabel",
-            "commMode",
-            "protocolName",
-            "city",
-            "zone",
-            "street",
-            "tagsName",
-            "createDate",
-            "activeDate",
-            "deactivatedDate",
-            "createdBy",
-            "firmwareVersion",
-            "firmwareVersionNon",
-            "firmwareVersionSign",
-            "hardwareVersion",
-            "consName",
-            "consSortCodeLabel",
-            "securityVersionLabel",
-            "securityVersionLabel",
-            "securitySuiteLabel",
-            "encryptCodeLabel",
-        ],
         "sortFields": [],
         "pageNum": 1,
-        "pageSize": 171,
+        "pageSize": 2,
     }
     task_query = "select task_id,export_name from sa.sys_export_task where task_id=%s"
     with allure.step("task params"):
@@ -90,9 +31,7 @@ def test_get_system_configuration(api_client, env_config, pg_connect):
             name="export params payload",
             attachment_type=allure.attachment_type.JSON,
         )
-    response = api_client.post(
-        "/api/meters/loadTableExportBackGroud?exportType=Excel", json=payload
-    )
+    response = api_client.post(f"{url}?exportType=Excel", json=payload)
     print(response.json())
     if response.status_code == 409:  # 用户名已存在
         pytest.skip("用户已存在，跳过创建测试")

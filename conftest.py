@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import redis
 import json
-
+import random
 pytest_plugins = [
     "fixtures.database",  # 自动发现 fixtures/database.py 中的 Fixture
 ]
@@ -101,3 +101,28 @@ def api_client(env_config, token_manager):
             return requests.post(f"{self.base_url}{path}", headers=headers, **kwargs)
 
     return APIClient(env_config["base_url"], token_manager)
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--rand-mode",
+        action="store",
+        default="full",
+        choices=["fast", "slow", "full"],
+        help="控制随机数据生成模式: fast(2条), slow(半数), full(全部)"
+    )
+
+@pytest.fixture(scope="session")
+def smart_random(request):
+    """根据 --rand-mode 参数控制随机取样范围"""
+    mode = request.config.getoption("--rand-mode")
+
+    def _inner(data):
+        if mode == "fast":
+            k = min(2, len(data))
+        elif mode == "slow":
+            k = max(1, len(data) // 2)
+        else:  # full
+            k = len(data)
+        return random.sample(data, k)
+
+    return _inner
