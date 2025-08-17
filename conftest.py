@@ -4,10 +4,24 @@ import os
 from pathlib import Path
 import redis
 import json
+from test_reporter.reporter import TestReporter
 import random
+
 pytest_plugins = [
     "fixtures.database",  # 自动发现 fixtures/database.py 中的 Fixture
 ]
+
+
+def pytest_sessionfinish(session, exitstatus):
+    # 只在测试失败或配置了总是发送报告时触发
+    reporter = TestReporter()
+
+    # 获取测试统计信息
+    failed_count = session.testsfailed
+    total_count = session.testscollected
+
+    # 生成并发送报告
+    reporter.generate_and_send_report(failed_count, total_count)
 
 
 @pytest.fixture(scope="session")
@@ -102,14 +116,16 @@ def api_client(env_config, token_manager):
 
     return APIClient(env_config["base_url"], token_manager)
 
+
 def pytest_addoption(parser):
     parser.addoption(
         "--rand-mode",
         action="store",
         default="full",
         choices=["fast", "slow", "full"],
-        help="控制随机数据生成模式: fast(2条), slow(半数), full(全部)"
+        help="控制随机数据生成模式: fast(2条), slow(半数), full(全部)",
     )
+
 
 @pytest.fixture(scope="session")
 def smart_random(request):
