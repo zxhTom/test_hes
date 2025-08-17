@@ -9,7 +9,7 @@ class EmailConfig:
     RECEIVERS = os.getenv("TEST_REPORT_RECEIVERS", "870775401@qq.com").split(",")
     PASSWORD = os.getenv("TEST_REPORT_PASSWORD", "MKvK43eH7C8dP4qu")
     SMTP_SERVER = os.getenv("TEST_REPORT_SMTP_SERVER", "smtp.163.com")
-    SMTP_PORT = int(os.getenv("TEST_REPORT_SMTP_PORT", "994"))
+    SMTP_PORT = int(os.getenv("TEST_REPORT_SMTP_PORT", "465"))
     ENABLED = os.getenv("TEST_REPORT_ENABLED", "true").lower() == "true"
 
 

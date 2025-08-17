@@ -37,6 +37,7 @@ def test_ssl_465():
 
         server = smtplib.SMTP_SSL("smtp.163.com", 465, context=context, timeout=10)
         server.set_debuglevel(1)  # 打印交互日志
+        server.local_hostname = "127.0.0.1"
         server.login(EMAIL, PASSWORD)
         server.sendmail(EMAIL, [TO], msg.as_string())
         server.quit()
@@ -52,6 +53,7 @@ def test_starttls_587():
 
         server = smtplib.SMTP("smtp.163.com", 587, timeout=10)
         server.set_debuglevel(1)
+        server.local_hostname = "127.0.1.1"
         server.ehlo()
         server.starttls(context=context)
         server.login(EMAIL, PASSWORD)

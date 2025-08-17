@@ -7,6 +7,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from typing import Optional
 
+import asyncio
+from playwright.async_api import async_playwright
 from .config import EmailConfig, ReportConfig
 
 
@@ -42,40 +44,21 @@ class TestReporter:
             print(f"生成Allure报告失败: {e}")
             return False
 
-    def convert_to_pdf(self) -> Optional[str]:
+    async def convert_to_pdf(self) -> Optional[str]:
         """将Allure报告转换为PDF"""
-        try:
-            # 尝试使用allure命令行工具直接生成PDF
-            subprocess.run(
-                [
-                    "allure",
-                    "generate",
-                    self.report_config.ALLURE_REPORT_DIR,
-                    "-o",
-                    self.report_config.PDF_REPORT_PATH,
-                    "--format",
-                    "pdf",
-                ],
-                check=True,
-            )
-            # os.makedirs(self.report_config.PDF_REPORT_PATH, exist_ok=True)
-            # return os.path.join(
-            #     self.report_config.PDF_REPORT_PATH, self.report_config.PDF_REPORT_NAME
-            # )
-            return self.report_config.PDF_REPORT_PATH
-        except subprocess.CalledProcessError:
-            try:
-                # 回退方案: 使用wkhtmltopdf
-                import pdfkit
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
 
-                index_html = os.path.join(
-                    self.report_config.ALLURE_REPORT_DIR, "index.html"
-                )
-                pdfkit.from_file(index_html, self.report_config.PDF_REPORT_PATH)
-                return self.report_config.PDF_REPORT_PATH
-            except Exception as e:
-                print(f"生成PDF报告失败: {e}")
-                return None
+            # "file:///Users/zxhtom/zxh/project/git/test_hes/allure_report/index.html"
+            await page.goto(
+                "file:///Users/zxhtom/zxh/project/git/test_hes/"
+                + self.report_config.ALLURE_REPORT_DIR
+                + "/index.html"
+            )
+            await page.pdf(path=self.report_config.PDF_REPORT_NAME, format="A4")
+            await browser.close()
+        return self.report_config.PDF_REPORT_NAME
 
     def send_report_email(
         self, pdf_path: str, failed_count: int, total_count: int
@@ -114,9 +97,15 @@ class TestReporter:
 
         # 发送邮件
         try:
-            with smtplib.SMTP_SSL(
-                self.email_config.SMTP_SERVER, self.email_config.SMTP_PORT
-            ) as server:
+            print(self.email_config.PASSWORD)
+            smtp_server = "smtp.163.com"
+            port = 465  # SSL端口
+            with smtplib.SMTP_SSL(smtp_server, port) as server:
+                # with smtplib.SMTP_SSL(
+                #     self.email_config.SMTP_SERVER, self.email_config.SMTP_PORT
+                # ) as server:
+                server.local_hostname = "127.0.1.1"
+                server.set_debuglevel(1)
                 server.login(self.email_config.SENDER, self.email_config.PASSWORD)
                 server.sendmail(
                     self.email_config.SENDER,
@@ -148,10 +137,11 @@ class TestReporter:
             return False
 
         # 转换为PDF
-        # pdf_path = self.convert_to_pdf()
-        # if not pdf_path:
-        #     return False
-        pdf_path = "allure-report.pdf"
+
+        pdf_path = asyncio.run(self.convert_to_pdf())
+        if not pdf_path:
+            return False
+        # pdf_path = "allure-report.pdf"
 
         # 发送邮件
         send_success = True
