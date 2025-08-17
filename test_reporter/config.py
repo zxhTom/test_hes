@@ -20,4 +20,4 @@ class ReportConfig:
     ALLURE_REPORT_DIR = "allure-report"
     PDF_REPORT_PATH = "test_report.pdf"
     PDF_REPORT_NAME = "test_report.pdf"
-    ALWAYS_SEND = os.getenv("TEST_REPORT_ALWAYS_SEND", "false").lower() == "true"
+    ALWAYS_SEND = os.getenv("TEST_REPORT_ALWAYS_SEND", "true").lower() == "true"
