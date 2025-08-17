@@ -51,8 +51,11 @@ class TestReporter:
             page = await browser.new_page()
 
             # "file:///Users/zxhtom/zxh/project/git/test_hes/allure_report/index.html"
+            parent_path = os.path.dirname(os.path.dirname(__file__))
             await page.goto(
-                "file:///Users/zxhtom/zxh/project/git/test_hes/"
+                "file:///"
+                + parent_path
+                + "/"
                 + self.report_config.ALLURE_REPORT_DIR
                 + "/index.html"
             )
@@ -90,22 +93,18 @@ class TestReporter:
         # 添加PDF附件
         with open(pdf_path, "rb") as f:
             part = MIMEApplication(f.read(), Name=os.path.basename(pdf_path))
-            part["Content-Disposition"] = (
-                f'attachment; filename="{os.path.basename(pdf_path)}"'
-            )
+            part[
+                "Content-Disposition"
+            ] = f'attachment; filename="{os.path.basename(pdf_path)}"'
             msg.attach(part)
 
         # 发送邮件
         try:
-            print(self.email_config.PASSWORD)
-            smtp_server = "smtp.163.com"
-            port = 465  # SSL端口
-            with smtplib.SMTP_SSL(smtp_server, port) as server:
-                # with smtplib.SMTP_SSL(
-                #     self.email_config.SMTP_SERVER, self.email_config.SMTP_PORT
-                # ) as server:
+            with smtplib.SMTP_SSL(
+                self.email_config.SMTP_SERVER, self.email_config.SMTP_PORT
+            ) as server:
                 server.local_hostname = "127.0.1.1"
-                server.set_debuglevel(1)
+                # server.set_debuglevel(1)
                 server.login(self.email_config.SENDER, self.email_config.PASSWORD)
                 server.sendmail(
                     self.email_config.SENDER,

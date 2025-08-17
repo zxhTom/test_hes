@@ -17,3 +17,5 @@ pip install stringcase
 pip install jsonpath_rw
 pip install pdfkit 
 pip install wkhtmltopdf
+pip install playwright
+playwright install chromium
