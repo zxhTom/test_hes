@@ -73,14 +73,14 @@ topconditions = [
         "03",
         "SUBSTATION.TYPE",
         "substationIds",
-        "SELECT substation_id FROM g_substation where is_delete='01' ORDER BY RANDOM() LIMIT 2;",
+        "SELECT substation_id FROM g_substation where is_delete='01' and is_active='true' ORDER BY RANDOM() LIMIT 2;",
         "/api/substation/list",
     ),
     (
         "05",
         "LINE_TYPE",
         "lineIds",
-        "SELECT line_id FROM g_line where is_delete='01' ORDER BY RANDOM() LIMIT 2;",
+        "SELECT line_id FROM g_line where is_delete='01' and is_active='true' ORDER BY RANDOM() LIMIT 2;",
         "/api/grid-management/line/query",
     ),
     (
@@ -99,27 +99,20 @@ topconditions = [
 @allure.severity(allure.severity_level.CRITICAL)
 @pytest.mark.parametrize("type,code,fieldName,exeSql,url", topconditions)
 def test_get_top_condition(
-    deviceTypeList, type, code, fieldName, exeSql, url, api_client, pg_connect
+    deviceTypeList, type, code, fieldName, exeSql, url, api_client, pg_connect,language
 ):
     cur = pg_connect.cursor()
-    multiple_type_sql = "select label_zhcn,label_en from sys_code_item sci where sci.table_id = (select table_id from sys_code_table sct where sct.name=%s)"
+    multiple_type_sql = f"select label_{language['language']}_{language['country']} from sys_code_item sci where sci.table_id = (select table_id from sys_code_table sct where sct.name=%s)"
     cur.execute(
         multiple_type_sql,
         (code,),
     )
     codes = cur.fetchall()
-    codes_zh = [row[0] for row in codes]
-    with allure.step("list zh language codes"):
+    codes_dy = [row[0] for row in codes]
+    with allure.step(f"list {language['language']} language codes"):
         allure.attach(
-            body=json.dumps(str(codes_zh), indent=2, ensure_ascii=False),
-            name="code zh list",
-            attachment_type=allure.attachment_type.TEXT,
-        )
-    codes_en = [row[1] for row in codes]
-    with allure.step("list en language codes"):
-        allure.attach(
-            body=json.dumps(str(codes_en), indent=2, ensure_ascii=False),
-            name="code en list",
+            body=json.dumps(str(codes_dy), indent=2, ensure_ascii=False),
+            name=f"code {language['language']} list",
             attachment_type=allure.attachment_type.TEXT,
         )
     cur.execute(
@@ -138,7 +131,7 @@ def test_get_top_condition(
     response = api_client.post("/api/kpi/device/deviceTypeStatics", json=item)
     kpiTotal = response.json()["data"]["total"]
     names = [row["name"] for row in response.json()["data"]["statics"]]
-    difference = [x for x in names if x not in codes_zh and x not in codes_en]
+    difference = [x for x in names if x not in codes_dy]
     with check:
         assert response.json()["httpStatus"] == 200
     with check:

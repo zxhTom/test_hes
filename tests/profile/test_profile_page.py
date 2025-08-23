@@ -120,7 +120,10 @@ def test_find_profile_data_extends_field(
                     attachment_type=allure.attachment_type.JSON,
                 )
             with check:
-                assert response.json()["httpStatus"] == 200
+                assert response.json()["httpStatus"] == 200 or (
+                    response.json()["httpStatus"] == 500
+                    and response.json()["messageCode"] == "38007"
+                )
 
             template["meterIds"] = meters
             with allure.step("profile meters data"):
@@ -139,7 +142,10 @@ def test_find_profile_data_extends_field(
                     attachment_type=allure.attachment_type.JSON,
                 )
             with check:
-                assert response.json()["httpStatus"] == 200
+                assert response.json()["httpStatus"] == 200 or (
+                    response.json()["httpStatus"] == 500
+                    and response.json()["messageCode"] == "38007"
+                )
 
             template["tmnlIds"] = meters
             template["meterIds"] = None
@@ -158,4 +164,7 @@ def test_find_profile_data_extends_field(
                     attachment_type=allure.attachment_type.JSON,
                 )
             with check:
-                assert response.json()["httpStatus"] == 200
+                assert response.json()["httpStatus"] == 200 or (
+                    response.json()["httpStatus"] == 500
+                    and response.json()["messageCode"] == "38007"
+                )

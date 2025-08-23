@@ -9,6 +9,7 @@ import random
 
 pytest_plugins = [
     "fixtures.database",  # 自动发现 fixtures/database.py 中的 Fixture
+    "fixtures.language",
 ]
 
 
@@ -112,6 +113,7 @@ def api_client(env_config, token_manager):
         def post(self, path, **kwargs):
             headers = kwargs.pop("headers", {})
             headers["Authorization"] = f"Bearer {self.token_manager.get_token()}"
+            headers["Accept-Language"] = f"es-es"
             return requests.post(f"{self.base_url}{path}", headers=headers, **kwargs)
 
     return APIClient(env_config["base_url"], token_manager)

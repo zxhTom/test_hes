@@ -7,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from typing import Optional
 
+from utils.system import kill_port
 import asyncio
 from playwright.async_api import async_playwright
 from .config import EmailConfig, ReportConfig
@@ -21,6 +22,8 @@ class TestReporter:
 
     def generate_allure_report(self) -> bool:
         """生成Allure报告"""
+        port = 8999
+        kill_port(port)
         try:
             # 确保目录存在
             os.makedirs(self.report_config.ALLURE_RESULTS_DIR, exist_ok=True)
@@ -38,6 +41,17 @@ class TestReporter:
                     "--single-file",
                 ],
                 check=True,
+            )
+            # 启动服务
+            print("\n启动 Allure 服务...")
+            subprocess.Popen(
+                [
+                    "allure",
+                    "open",
+                    self.report_config.ALLURE_REPORT_DIR,
+                    "--port",
+                    str(port),
+                ]
             )
             return True
         except subprocess.CalledProcessError as e:
@@ -67,7 +81,7 @@ class TestReporter:
         self, pdf_path: str, failed_count: int, total_count: int
     ) -> bool:
         """发送带PDF附件的测试报告邮件"""
-        if not self.email_config.ENABLED:
+        if not self.report_config.ENABLED:
             print("邮件通知功能已禁用")
             return False
 
@@ -127,7 +141,7 @@ class TestReporter:
 
     def generate_and_send_report(self, failed_count: int, total_count: int) -> bool:
         """生成报告并发送邮件"""
-        if not self.email_config.ENABLED and not self.report_config.ALWAYS_SEND:
+        if not self.report_config.ENABLED and not self.report_config.ALWAYS_SEND:
             print("邮件通知功能已禁用且未设置总是发送报告")
             return False
 

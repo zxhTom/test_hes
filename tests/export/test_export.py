@@ -10,7 +10,7 @@ export_url = [("/api/meters/loadTableExportBackGroud")]
 @allure.story("test export task")
 @allure.title("Export")
 @allure.severity(allure.severity_level.CRITICAL)
-# @pytest.mark.skip(reason="暂时禁用，avoid log record")
+@pytest.mark.skip(reason="暂时禁用，avoid log record")
 @pytest.mark.parametrize("url", export_url)
 def test_get_system_configuration(url, api_client, env_config, pg_connect):
     """
