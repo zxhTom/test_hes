@@ -60,6 +60,12 @@ def test_get_condition_list(api_client, env_config, pg_connect):
         response = api_client.post(
             "/api/dynamic/condition/selectConditionableFieldEntire", json=payload
         )
+        with allure.step("get conditions only in menu response"):
+            allure.attach(
+                body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+                name="entire" + str(menuId),
+                attachment_type=allure.attachment_type.JSON,
+            )
         data = response.json()["data"]
         for item in data:
             if (

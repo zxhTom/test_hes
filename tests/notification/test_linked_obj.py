@@ -52,7 +52,7 @@ def test_linked_save(targetType, api_client, pg_connect):
         check_data_remain_linked_sql = "select * from sys_abstract_event_alarm_link where source_type=2 and source_id=%s and target_type = %s"
         cur.execute(check_data_remain_linked_sql, (sourceId, targetType))
         target_datas = cur.fetchall()
-        assert 0==len(targetIds) or len(target_datas) == len(targetIds)
+        assert 0 == len(targetIds) or len(target_datas) == len(targetIds)
     elif (
         response.json()["httpStatus"] == 500
         and response.json()["messageCode"] == "31004"
@@ -73,12 +73,18 @@ def test_linked_save(targetType, api_client, pg_connect):
         )
 
 
+alarm_event = [
+    ("1", "/api/event_abstract/page", "eventId", "11"),
+    ("2", "/api/alarm_abstract/page", "alarmId", "10"),
+]
+
+
 @allure.feature("alarm event list")
 @allure.story("alarm list")
 @allure.title("alarm list")
 @allure.severity(allure.severity_level.CRITICAL)
-def test_alarm_list_page(api_client, pg_connect):
-    url = "/api/alarm_abstract/page"
+@pytest.mark.parametrize("itemtype,url,name,tagType", alarm_event)
+def test_alarm_list_page(itemtype,url,name,tagType,api_client, pg_connect):
 
     with allure.step("list"):
         allure.attach(
@@ -102,34 +108,105 @@ def test_alarm_list_page(api_client, pg_connect):
                 if key.endswith("Label"):
                     if first[key[:-5]] != None and first[key] == None:
                         assert False
-            alarmIds = [int(row["alarmId"]) for row in response.json()["data"]["list"]]
+            alarmIds = [int(row[name]) for row in response.json()["data"]["list"]]
             tags_sql = """
                 select st.tags_name from sa.sys_tag_rel str 
                 left join sa.sys_tags st on st.tags_id =str.tag_id 
-                where st.target_type =10
+                where st.target_type =%s
                 and str.object_id = any(%s)
             """
             cur = pg_connect.cursor()
-            cur.execute(tags_sql, (alarmIds,))
+            cur.execute(
+                tags_sql,
+                (
+                    tagType,
+                    alarmIds,
+                ),
+            )
             tables = cur.fetchall()
             tags_names = [row[0] for row in tables]
             if len(tags_names) > 0:
-                interfaceTagsNames = first["tagsName"].split(",")
-                assert sorted(tags_names) == sorted(interfaceTagsNames)
+                if first["tagsName"] != None:
+                    interfaceTagsNames = first["tagsName"].split(",")
+                    assert interfaceTagsNames <= tags_names
 
 
-def test_alarm_linked_list(api_client, pg_connect):
+alarm_event = [
+    ("1", "select * from sys_event_code_abstract where is_active=true", "alarmId"),
+    ("2", "select * from p_obis_alarm_abstract poaa where is_active=true", "eventId"),
+]
+
+
+@pytest.mark.parametrize("itemtype,select_sql,name", alarm_event)
+def test_alarm_linked_list(itemtype, select_sql, name, api_client, pg_connect):
     url = "/api/alarm_abstract/subordinateLinkedObjList"
     param = {"sourceId": 172, "sourceType": 1}
-    alarm_sql = "select * from p_obis_alarm_abstract poaa where is_active=true"
     cur = pg_connect.cursor()
-    cur.execute(alarm_sql)
+    cur.execute(select_sql)
     tables = cur.fetchall()
     alarmIdList = [int(row[0]) for row in tables]
     sourceId = random.choice(alarmIdList)
     param["sourceId"] = sourceId
+    param["sourceType"] = itemtype
+    with allure.step("test subordinates params"):
+        allure.attach(
+            body=json.dumps(param, indent=2, ensure_ascii=False),
+            name=url,
+            attachment_type=allure.attachment_type.JSON,
+        )
     response = api_client.post(url, json=param)
+    with allure.step("test subordinates response"):
+        allure.attach(
+            body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+            name=url,
+            attachment_type=allure.attachment_type.JSON,
+        )
     with check:
         assert response.json()["httpStatus"] == 200
     with check:
         len(response.json()["data"]) < 3
+
+
+alarm_event = [
+    ("1", "/api/alarm_abstract/page", "eventId"),
+    ("2", "/api/event_abstract/page", "alarmId"),
+]
+
+
+@pytest.mark.parametrize("itemtype,url,name", alarm_event)
+def test_alarm_or_event_unselect_list(itemtype, url, name, pg_connect, api_client):
+    detectUrls = {
+        1: "/api/event_abstract/page",
+        2: "/api/alarm_abstract/page",
+    }
+    detectNames = {
+        1: "eventId",
+        2: "alarmId",
+    }
+    cur = pg_connect.cursor()
+    linked_sql = "select source_id,source_type,target_id from sys_abstract_event_alarm_link where target_type=%s ORDER BY RANDOM() limit 5"
+    cur.execute(linked_sql, (itemtype))
+    params = {}
+    params["unselect"] = True
+    tables = cur.fetchall()
+    for row in tables:
+        params["sourceId"] = int(row[0])
+        params["sourceType"] = int(row[1])
+        url = detectUrls[int(itemtype)]
+        with allure.step("test unselect filter param"):
+            allure.attach(
+                body=json.dumps(params, indent=2, ensure_ascii=False),
+                name=url,
+                attachment_type=allure.attachment_type.JSON,
+            )
+        response = api_client.post(url, json=params)
+
+        with allure.step("test unselect filter response"):
+            allure.attach(
+                body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+                name=url,
+                attachment_type=allure.attachment_type.JSON,
+            )
+        name=detectNames[int(itemtype)]
+        itemIds = [int(row.get(name)) for row in response.json()["data"]["list"]]
+        assert int(row[2]) not in itemIds

@@ -7,4 +7,5 @@ echo $TEST_ENV
 echo $TEST_REPORT_ENABLED
 echo "Env..."
 echo $PATH
+rm -rf ./allure-results
 python -m pytest --alluredir=./allure-results -s --count=1 -v

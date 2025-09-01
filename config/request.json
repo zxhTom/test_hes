@@ -46,5 +46,21 @@
   {
     "menuId":14984,
     "url":"/api/firmware/page"
+  },
+  {
+    "menuId":16458,
+    "url":"/api/alarm_abstract/page"
+  },
+  {
+    "menuId":16457,
+    "url":"/api/event_abstract/page"
+  },
+  {
+    "menuId":17748,
+    "url":"/api/meters/alarmEnventDeviceListPage"
+  },
+  {
+    "menuId":17749,
+    "url":"/api/tmnl-run/alarmEnventDeviceListPage"
   }
 ]

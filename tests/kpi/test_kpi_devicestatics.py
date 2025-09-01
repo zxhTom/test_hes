@@ -136,6 +136,17 @@ def test_get_top_condition(
         assert response.json()["httpStatus"] == 200
     with check:
         assert len(difference) == 0
+    conditions = []
+    condition={
+      "fieldKey": "is_active",
+      "fieldType": "String",
+      "operator": "in",
+      "values": [
+        True
+      ]
+    }
+    conditions.append(condition)
+    item["conditions"]=conditions
     response = api_client.post(url, json=item)
     with check:
         assert response.json()["data"]["total"] == kpiTotal

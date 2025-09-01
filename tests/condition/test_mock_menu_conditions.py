@@ -95,7 +95,7 @@ def generate_operator(field_type, multipeable, ambiguous):
     return "="
 
 
-def generate_json_output(list, conditions, fields):
+def generate_json_output(menuId,list, conditions, fields):
     """生成最终JSON输出"""
     result = []
     for field in fields:
@@ -123,7 +123,7 @@ def generate_json_output(list, conditions, fields):
                 with allure.step("check condition"):
                     allure.attach(
                         body=json.dumps(conditions, indent=2, ensure_ascii=False),
-                        name=field_name,
+                        name=f"{menuId}@@@{field_name}",
                         attachment_type=allure.attachment_type.JSON,
                     )
                 assert False
@@ -218,7 +218,7 @@ def test_generate_noneandmulptile_condition(
                 # print(response.json())
                 list = response.json()["data"]["list"]
                 # 生成条件列表
-                conditions = generate_json_output(list, cons, fields)
+                conditions = generate_json_output(menuId,list, cons, fields)
                 template_param["conditions"] = conditions
 
                 a_values = [

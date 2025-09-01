@@ -23,7 +23,7 @@ class _TerminatingCheck:
 
 # 默认行为：不终止（兼容原版 check）
 check = original_check
-# check = _TerminatingCheck(terminate_on_fail=True)
+check = _TerminatingCheck(terminate_on_fail=True)
 
 
 def enable_terminate_on_fail():
