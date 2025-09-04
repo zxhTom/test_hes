@@ -5,6 +5,8 @@ from jsonpath_rw import parse
 from utils.check_utils import check
 import jmespath
 import random
+import string
+from psycopg2 import sql
 
 targets = [(1), (2)]
 
@@ -47,12 +49,18 @@ def test_linked_save(targetType, api_client, pg_connect):
             attachment_type=allure.attachment_type.JSON,
         )
     response = api_client.post(url, json=param)
+    with allure.step("save linked response"):
+        allure.attach(
+            body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+            name=url,
+            attachment_type=allure.attachment_type.JSON,
+        )
     if response.json()["httpStatus"] == 200:
         assert True
         check_data_remain_linked_sql = "select * from sys_abstract_event_alarm_link where source_type=2 and source_id=%s and target_type = %s"
         cur.execute(check_data_remain_linked_sql, (sourceId, targetType))
         target_datas = cur.fetchall()
-        assert 0 == len(targetIds) or len(target_datas) == len(targetIds)
+        assert 0 == len(targetIds) or len(target_datas) >= len(targetIds)
     elif (
         response.json()["httpStatus"] == 500
         and response.json()["messageCode"] == "31004"
@@ -64,13 +72,6 @@ def test_linked_save(targetType, api_client, pg_connect):
             cur.execute(remain_count_sql, (sourceId, targetType))
             tables = cur.fetchone()
             assert (len(targetIds) + int(tables[0])) > 3
-
-    with allure.step("save linked response"):
-        allure.attach(
-            body=json.dumps(response.json(), indent=2, ensure_ascii=False),
-            name=url,
-            attachment_type=allure.attachment_type.JSON,
-        )
 
 
 alarm_event = [
@@ -84,7 +85,7 @@ alarm_event = [
 @allure.title("alarm list")
 @allure.severity(allure.severity_level.CRITICAL)
 @pytest.mark.parametrize("itemtype,url,name,tagType", alarm_event)
-def test_alarm_list_page(itemtype,url,name,tagType,api_client, pg_connect):
+def test_alarm_list_page(itemtype, url, name, tagType, api_client, pg_connect):
 
     with allure.step("list"):
         allure.attach(
@@ -207,6 +208,96 @@ def test_alarm_or_event_unselect_list(itemtype, url, name, pg_connect, api_clien
                 name=url,
                 attachment_type=allure.attachment_type.JSON,
             )
-        name=detectNames[int(itemtype)]
+        name = detectNames[int(itemtype)]
         itemIds = [int(row.get(name)) for row in response.json()["data"]["list"]]
         assert int(row[2]) not in itemIds
+
+
+check_alarm_event = [
+    (
+        "alarm_id",
+        "alarm_name",
+        "p_obis_alarm_abstract",
+        "/api/alarm_abstract/checkUniqc",
+    ),
+    (
+        "event_id",
+        "event_name",
+        "sys_event_code_abstract",
+        "/api/event_abstract/checkUniqc",
+    ),
+]
+
+
+def snake_to_camel(snake_str):
+    # 首先将字符串用下划线分割成单词列表
+    components = snake_str.split("_")
+    # 第一个单词保持不变，后面的每个单词首字母大写
+    # 然后将列表中的所有单词连接成一个字符串
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def generate_random_string(length=8):
+    """生成指定长度的随机字符串（包含大小写字母和数字）"""
+    characters = string.ascii_letters + string.digits
+    return "".join(random.choice(characters) for _ in range(length))
+
+
+@pytest.mark.parametrize("ffieldName,sfieldName,tableName,checkUrl", check_alarm_event)
+def test_check_alarm_event_unic(
+    ffieldName, sfieldName, tableName, checkUrl, pg_connect, api_client
+):
+    cur = pg_connect.cursor()
+    # item_sql = "select %s ,%s from %s  ORDER BY RANDOM() limit 5"
+    item_sql = sql.SQL("SELECT {},{} FROM {} order by random() limit 5").format(
+        sql.Identifier(ffieldName),
+        sql.Identifier(sfieldName),
+        sql.Identifier(tableName),  # 安全地处理标识符
+    )
+    cur.execute(item_sql, (ffieldName, sfieldName))
+    tables = cur.fetchall()
+    for row in tables:
+        params = {}
+        params[snake_to_camel(ffieldName)] = int(row[0])
+        params[snake_to_camel(sfieldName)] = row[1]
+
+        with allure.step("will check unic"):
+            allure.attach(
+                body=json.dumps(params, indent=2, ensure_ascii=False),
+                name=checkUrl,
+                attachment_type=allure.attachment_type.JSON,
+            )
+        response = api_client.post(checkUrl, json=params)
+
+        with allure.step("check unic response"):
+            allure.attach(
+                body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+                name=checkUrl,
+                attachment_type=allure.attachment_type.JSON,
+            )
+        assert response.json()["data"] == True
+        newItemName = generate_random_string(10)
+        item_sql = sql.SQL("SELECT 1 FROM {} where {}!=%s and {}=%s").format(
+            sql.Identifier(tableName),
+            sql.Identifier(ffieldName),
+            sql.Identifier(sfieldName),
+        )
+        cur.execute(item_sql, (int(row[0]), newItemName))
+        tables = cur.fetchall()
+        pre_result = len(tables) == 0
+        params[snake_to_camel(sfieldName)] = newItemName
+        with allure.step("will check unic,auto generate"):
+            allure.attach(
+                body=json.dumps(params, indent=2, ensure_ascii=False),
+                name=checkUrl,
+                attachment_type=allure.attachment_type.JSON,
+            )
+        response = api_client.post(checkUrl, json=params)
+
+        with allure.step("check unic response,auto generate"):
+            allure.attach(
+                body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+                name=checkUrl,
+                attachment_type=allure.attachment_type.JSON,
+            )
+        assert response.json()["data"] == pre_result

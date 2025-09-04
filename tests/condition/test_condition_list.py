@@ -1,4 +1,4 @@
-from pytest_check import check
+from utils.check_utils import check
 import allure
 import json
 

@@ -1,0 +1,14 @@
+[
+  {
+    "rawType":"52",
+    "url":["/api/event_abstract/page"]
+  },
+  {
+    "rawType":"51",
+    "url":["/api/alarm_abstract/page"]
+  },
+  {
+    "rawType":"50",
+    "url":["/api/meters/alarmEnventDeviceListPage","/api/tmnl-run/alarmEnventDeviceListPage"]
+  }
+]

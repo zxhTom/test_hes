@@ -221,6 +221,12 @@ def test_coordinate_total(deviceType, url, api_client, env_config, pg_connect):
     with check:
         assert statics_response.json()["httpStatus"] == 200
     device_response = api_client.post(url, json=meter_param)
+    with allure.step("device response"):
+        allure.attach(
+            body=json.dumps(device_response.json(), indent=2, ensure_ascii=False),
+            name="device statics,url="+statics_url,
+            attachment_type=allure.attachment_type.JSON,
+        )
     with check:
         assert device_response.json()["httpStatus"] == 200
     assert (

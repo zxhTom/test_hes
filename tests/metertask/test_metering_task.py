@@ -3,6 +3,36 @@ import allure
 import json
 from utils.check_utils import check
 from utils.data import is_json_and_type as isjson
+import pandas as pd
+
+
+def deduplicate_by_attr(objects, attr, keep="first"):
+    """
+    按照指定属性去重，可选择保留第一个或最后一个
+
+    Args:
+        objects: 对象列表
+        attr: 要去重的属性名
+        keep: 保留策略，'first'或'last'
+
+    Returns:
+        去重后的对象列表
+    """
+    if keep == "last":
+        objects = objects[::-1]
+
+    seen = set()
+    result = []
+    for obj in objects:
+        attr_value = obj.get(attr)
+        if attr_value not in seen:
+            seen.add(attr_value)
+            result.append(obj)
+
+    if keep == "last":
+        return result[::-1]
+    return result
+
 
 task_list = "/api/metering-task/get-metering-task"
 detail_url = {
@@ -38,7 +68,7 @@ def test_get_metering_valid(api_client):
     with allure.step("task list response"):
         allure.attach(
             body=json.dumps(response.json(), indent=2, ensure_ascii=False),
-            name="task list response",
+            name=f"task list response,{task_list}",
             attachment_type=allure.attachment_type.JSON,
         )
     with check:
@@ -48,7 +78,10 @@ def test_get_metering_valid(api_client):
         for row in response.json().get("data")["list"]
         if row["collObjType"] in detail_url
     ]
-    for row in filter_rows:
+    # result = list({obj.collObjType: obj for obj in filter_rows}.values())
+    result = deduplicate_by_attr(filter_rows, "collObjType")
+    # result=filter_rows
+    for row in result:
         old_count = row["objDetailCount"]
         task_id = row["taskId"]
         collobjtype = row["collObjType"]
@@ -70,7 +103,7 @@ def test_get_metering_valid(api_client):
         with allure.step("selected list response"):
             allure.attach(
                 body=json.dumps(response.json(), indent=2, ensure_ascii=False),
-                name="selected list",
+                name="selected list"+count_url,
                 attachment_type=allure.attachment_type.JSON,
             )
         with check:
@@ -97,7 +130,7 @@ def test_get_metering_valid(api_client):
             with allure.step("unselected list response"):
                 allure.attach(
                     body=json.dumps(response.json(), indent=2, ensure_ascii=False),
-                    name="unselected list",
+                    name="unselected list"+un_count_url,
                     attachment_type=allure.attachment_type.JSON,
                 )
             with check:

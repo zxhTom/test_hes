@@ -3,10 +3,11 @@ import allure
 import json
 from jsonpath_rw import parse
 from utils.check_utils import check
-import jmespath
 import random
 
 from collections import defaultdict
+
+import jmespath
 
 protocol_list_sql = """
 		SELECT

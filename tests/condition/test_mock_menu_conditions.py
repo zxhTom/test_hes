@@ -1,6 +1,6 @@
 import os
 import pytest
-from pytest_check import check
+from utils.check_utils import check
 import allure
 import json
 import traceback
@@ -36,7 +36,7 @@ def generate_value(
         samples = [1, 2, 4, 5]
         try:
             if options != "":
-                cursor = pg_connect.cursor()
+                cur = pg_connect.cursor()
                 multiple_type_sql = "select code from sys_code_item sci where sci.table_id = (select table_id from sys_code_table sct where sct.name=%s)"
                 cur.execute(multiple_type_sql, (options,))
                 tables = cur.fetchall()
@@ -95,7 +95,7 @@ def generate_operator(field_type, multipeable, ambiguous):
     return "="
 
 
-def generate_json_output(menuId,list, conditions, fields):
+def generate_json_output(menuId, list, conditions, fields):
     """生成最终JSON输出"""
     result = []
     for field in fields:
@@ -190,58 +190,78 @@ def test_generate_noneandmulptile_condition(
                     continue
                     print("slow....>>>>")
                     request.node.add_marker(pytest.mark.slow)
-                url = item.get("url")
-                print(f"ID: {item.get('menuId')}, Name: {url}")
+                urls = item.get("url")
+                for url in urls:
+                    print(f"ID: {item.get('menuId')}, Name: {url}")
 
-                fields = fetch_query_fields(menuId, pg_connect)
-                conditions = []
-                with allure.step("generate none paramter condition page"):
-                    allure.attach(
-                        body=json.dumps(template_param, indent=2, ensure_ascii=False),
-                        name=url,
-                        attachment_type=allure.attachment_type.JSON,
+                    fields = fetch_query_fields(menuId, pg_connect)
+                    conditions = []
+                    with allure.step("generate none paramter condition page"):
+                        allure.attach(
+                            body=json.dumps(
+                                template_param, indent=2, ensure_ascii=False
+                            ),
+                            name=url,
+                            attachment_type=allure.attachment_type.JSON,
+                        )
+                    template_param["conditions"] = conditions
+                    response = api_client.post(url, json=template_param)  # 10秒超时
+                    with allure.step("none condition,response"):
+                        allure.attach(
+                            body=json.dumps(
+                                response.json(), indent=2, ensure_ascii=False
+                            ),
+                            name=str(url),
+                            attachment_type=allure.attachment_type.JSON,
+                        )
+                    assert response.json()["httpStatus"] == 200
+                    noneConditonDatas=response.json()["data"]["list"]
+                    condition_res = api_client.post(
+                        "/api/dynamic/condition/selectConditionableFieldEntire",
+                        json={"menuId": menuId},
                     )
-                template_param["conditions"] = conditions
-                response = api_client.post(url, json=template_param)  # 10秒超时
-                with allure.step("none condition,response"):
-                    allure.attach(
-                        body=json.dumps(response.json(), indent=2, ensure_ascii=False),
-                        name=str(url),
-                        attachment_type=allure.attachment_type.JSON,
-                    )
-                assert response.json()["httpStatus"]==200
-                condition_res = api_client.post(
-                    "/api/dynamic/condition/selectConditionableFieldEntire",
-                    json={"menuId": menuId},
-                )
-                cons = condition_res.json()["data"]
-                # print(response.json())
-                list = response.json()["data"]["list"]
-                # 生成条件列表
-                conditions = generate_json_output(menuId,list, cons, fields)
-                template_param["conditions"] = conditions
+                    with allure.step("condition list"):
+                        allure.attach(
+                            body=json.dumps(
+                                condition_res.json(), indent=2, ensure_ascii=False
+                            ),
+                            name=str(menuId),
+                            attachment_type=allure.attachment_type.JSON,
+                        )
+                    cons = condition_res.json()["data"]
+                    # print(response.json())
+                    list = response.json()["data"]["list"]
+                    # 生成条件列表
+                    conditions = generate_json_output(menuId, list, cons, fields)
+                    template_param["conditions"] = conditions
 
-                a_values = [
-                    item["fieldKey"] for item in conditions if "fieldKey" in item
-                ]
+                    a_values = [
+                        item["fieldKey"] for item in conditions if "fieldKey" in item
+                    ]
 
-                with allure.step(
-                    "will generate some condition,len=" + str(len(a_values))
-                ):
-                    allure.attach(
-                        body=json.dumps(template_param, indent=2, ensure_ascii=False),
-                        name=str(url),
-                        attachment_type=allure.attachment_type.JSON,
-                    )
-                response = api_client.post(url, json=template_param)  # 10秒超时
-                with allure.step("condition,response=" + str(len(a_values))):
-                    allure.attach(
-                        body=json.dumps(response.json(), indent=2, ensure_ascii=False),
-                        name=str(url),
-                        attachment_type=allure.attachment_type.JSON,
-                    )
-                if response.json()["httpStatus"] == 200:
-                    assert True
-                else:
-                    print(response.json())
-                    assert False
+                    with allure.step(
+                        "will generate some condition,len=" + str(len(a_values))
+                    ):
+                        allure.attach(
+                            body=json.dumps(
+                                template_param, indent=2, ensure_ascii=False
+                            ),
+                            name=str(url),
+                            attachment_type=allure.attachment_type.JSON,
+                        )
+                    response = api_client.post(url, json=template_param)  # 10秒超时
+                    with allure.step("condition,response=" + str(len(a_values))):
+                        allure.attach(
+                            body=json.dumps(
+                                response.json(), indent=2, ensure_ascii=False
+                            ),
+                            name=str(url),
+                            attachment_type=allure.attachment_type.JSON,
+                        )
+                    if response.json()["httpStatus"] == 200:
+                        assert True
+                    else:
+                        print(response.json())
+                        assert False
+                    if(len(noneConditonDatas)>0 and len(conditions)>0):
+                        assert len(noneConditonDatas)>len(response.json()["data"]["list"])

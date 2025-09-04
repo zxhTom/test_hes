@@ -1,66 +1,110 @@
 [
   {
     "menuId":1133,
-    "url":"/api/meters/loadDeviceInfoAndOnlineStatus"
+    "url":["/api/meters/loadDeviceInfoAndOnlineStatus"]
+  },
+  {
+    "menuId":-1131,
+    "url":["/api/metering-task/getTaskSelectedMeter","/api/metering-task/getTaskUnSelectedMeter"]
   },
   {
     "menuId":1134,
-    "url":"/api/tmnl-run/page"
+    "url":["/api/tmnl-run/page"]
+  },
+  {
+    "menuId":-1134,
+    "url":["/api/metering-task/getTaskSelectedTerminal","/api/metering-task/getTaskUnSelectedTerminal"]
   },
   {
     "menuId":14994,
-    "url":"/api/grid-management/line/query"
+    "url":["/api/grid-management/line/query"]
   },
   {
     "menuId":14992,
-    "url":"/api/substation/list"
+    "url":["/api/substation/list"]
   },
   {
-    "menuId":24993,
-    "url":"/api/grid-management/tran/query"
+    "menuId":14993,
+    "url":["/api/grid-management/tran/query"]
   },
   {
     "menuId":13866,
-    "url":"/api/communication/listPage"
+    "url":["/api/communication/listPage"]
   },
   {
     "menuId":1247,
-    "url":"/api/access-log/get-access-log"
+    "url":["/api/access-log/get-access-log"]
   },
   {
     "menuId":1186,
-    "url":"/api/sys-op-log/page"
+    "url":["/api/sys-op-log/page"]
   },
   {
     "menuId":14974,
-    "url":"/api/metering-task/get-metering-task"
+    "url":["/api/metering-task/get-metering-task"]
   },
   {
     "menuId":14082,
-    "url":"/api/subTask/page"
+    "url":["/api/subTask/page"]
   },
   {
     "menuId":14083,
-    "url":"/api/batchTask/page"
+    "url":["/api/batchTask/page"]
   },
   {
     "menuId":14984,
-    "url":"/api/firmware/page"
+    "url":["/api/firmware/page"]
   },
   {
     "menuId":16458,
-    "url":"/api/alarm_abstract/page"
+    "url":["/api/alarm_abstract/page"]
   },
   {
     "menuId":16457,
-    "url":"/api/event_abstract/page"
+    "url":["/api/event_abstract/page"]
   },
   {
     "menuId":17748,
-    "url":"/api/meters/alarmEnventDeviceListPage"
+    "url":["/api/meters/alarmEnventDeviceListPage"]
   },
   {
     "menuId":17749,
-    "url":"/api/tmnl-run/alarmEnventDeviceListPage"
+    "url":["/api/tmnl-run/alarmEnventDeviceListPage"]
+  },
+  {
+    "menuId":1141,
+    "url":["/api/tariff/page"]
+  },
+  {
+    "menuId":4550,
+    "url":["/api/load/tariff/page"]
+  },
+  {
+    "menuId":2806,
+    "url":["/api/kms-key/page"]
+  },
+  {
+    "menuId":4263,
+    "url":["/api/sms-template/page"]
+  },
+  {
+    "menuId":4270,
+    "url":["/api/email-template/page"]
+  },
+  {
+    "menuId":1193,
+    "url":["/api/fep-cfg/page"]
+  },
+  {
+    "menuId":1189,
+    "url":["/api/code/tablelist"]
+  },
+  {
+    "menuId":1183,
+    "url":["/api/userinfo/getUsers"]
+  },
+  {
+    "menuId":14932,
+    "url":["/api/task/page"]
   }
 ]

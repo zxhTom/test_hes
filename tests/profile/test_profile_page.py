@@ -44,7 +44,7 @@ def random_org(pg_connect):
     cur.execute(multiple_org_sql, ("100%",))
     tables = cur.fetchall()
     orgs = [row[0] for row in tables]
-    return orgs
+    return orgs + [100]
 
 
 @pytest.fixture(scope="module")
@@ -54,7 +54,7 @@ def meters(pg_connect):
     cur.execute(multiple_device_sql)
     tables = cur.fetchall()
     devices = [int(row[0]) for row in tables]
-    return random.sample(devices, random.randint(2, len(devices)))
+    return random.sample(devices, random.randint(2, len(devices))) + [105854]
 
 
 @pytest.fixture(scope="module")
@@ -68,21 +68,52 @@ def tmnls(pg_connect):
 
 
 @pytest.fixture(scope="module")
-def random_profile(api_client):
+def random_profile(meters, api_client):
     url = "/api/profile/profileType"
-    response = api_client.post(url, json={})
+    params = {"meterType": "01", "deviceIdList": []}
+    params["deviceIdList"] = meters
+    response = api_client.post(url, json=params)
     if response.json()["httpStatus"] == 200:
         jsonpath_expr = parse("$..groupId")
         profile = [match.value for match in jsonpath_expr.find(response.json())]
-    return random.sample(profile, random.randint(2, len(profile)))
+    return random.sample(profile, random.randint(2, len(profile))) + [20930000000]
 
 
 @pytest.fixture(scope="module")
 def random_time_range():
-    start, end = timerange(min_duration_hours=144, max_duration_hours=1680)
+    start, end = timerange(min_duration_hours=144, max_duration_hours=168000)
     start = start.strftime("%Y-%m-%d %H:%M:%S")
     end = end.strftime("%Y-%m-%d %H:%M:%S")
     return start, end
+
+
+def checkFieldAndResultCoordinate(datas, configurations):
+    need_id_field = [
+        row["fieldName"]
+        for row in configurations["data"]["allColumnList"]
+        if row["fieldName"] != None and row["fieldName"] != ""
+    ]
+    page_data = datas["data"]["list"]
+    if len(page_data) == 0:
+        return
+    print(">>>>>")
+    print(len(need_id_field))
+    single_item = page_data[0]
+    for field_name in need_id_field:
+        if field_name not in single_item:
+            print(field_name)
+            with allure.step("find field not supprtted by page select"):
+                allure.attach(
+                    body=field_name,
+                    name="all",
+                    attachment_type=allure.attachment_type.TEXT,
+                )
+            assert False
+            target_collects = [
+                row[field_name] for row in page_data if row[field_name] != None
+            ]
+            if len(target_collects) == 0:
+                print(field_name)
 
 
 @allure.feature("profile function")
@@ -104,6 +135,15 @@ def test_find_profile_data_extends_field(
             template["startTime"] = random_time_range[0]
             template["endTime"] = random_time_range[1]
 
+            configurations = []
+            configuration_url = "/api/profile/getConfiguration"
+            configuration_params = {
+                "groupIds": [profile],
+                "defaultGroup": "__93%",
+                "meterType": "01",
+                "deviceIdList": [],
+                "rawType": "06",
+            }
             with allure.step("profile all data"):
                 allure.attach(
                     body=json.dumps(template, indent=2, ensure_ascii=False),
@@ -126,6 +166,11 @@ def test_find_profile_data_extends_field(
                 )
 
             template["meterIds"] = meters
+            configuration_params["deviceIdList"] = meters
+
+            configuration_response = api_client.post(
+                configuration_url, json=configuration_params
+            )
             with allure.step("profile meters data"):
                 allure.attach(
                     body=json.dumps(template, indent=2, ensure_ascii=False),
@@ -146,8 +191,10 @@ def test_find_profile_data_extends_field(
                     response.json()["httpStatus"] == 500
                     and response.json()["messageCode"] == "38007"
                 )
-
-            template["tmnlIds"] = meters
+            checkFieldAndResultCoordinate(
+                response.json(), configuration_response.json()
+            )
+            template["tmnlIds"] = tmnls
             template["meterIds"] = None
 
             with allure.step("profile tmnl data"):
