@@ -10,5 +10,9 @@
   {
     "rawType":"50",
     "url":["/api/meters/alarmEnventDeviceListPage","/api/tmnl-run/alarmEnventDeviceListPage"]
+  },
+  {
+    "rawType":"34",
+    "url":["/api/metering-task/get-metering-task"]
   }
 ]

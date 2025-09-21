@@ -34,7 +34,7 @@ def test_linked_save(targetType, api_client, pg_connect):
     target_obj_sql = """
         select alarm_id as id from p_obis_alarm_abstract poaa where is_active =true
         union all
-        select event_id as id from sys_event_code_abstract seca
+        select event_id as id from sys_event_code_abstract seca where is_active=true
     """
     cur.execute(target_obj_sql)
     tables = cur.fetchall()
@@ -68,7 +68,7 @@ def test_linked_save(targetType, api_client, pg_connect):
         if len(targetIds) > 3:
             assert True
         else:
-            remain_count_sql = "select count(1) from sys_abstract_event_alarm_link where source_type=2 and source_id=%s and target_type!=%s"
+            remain_count_sql = "select count(1) from sys_abstract_event_alarm_link where source_type=2 and source_id=%s and target_type=%s"
             cur.execute(remain_count_sql, (sourceId, targetType))
             tables = cur.fetchone()
             assert (len(targetIds) + int(tables[0])) > 3
@@ -275,7 +275,15 @@ def test_check_alarm_event_unic(
                 name=checkUrl,
                 attachment_type=allure.attachment_type.JSON,
             )
-        assert response.json()["data"] == True
+        count_sql = sql.SQL("select count(1) from {} where {}={}").format(
+            sql.Identifier(tableName),
+            sql.Identifier(sfieldName),
+            sql.Literal(row[1]),  # 安全地处理标识符
+        )
+        cur.execute(count_sql, (tableName,sfieldName,row[1]))
+        onedata=cur.fetchone()
+        data_flag=int(onedata[0])==1
+        assert response.json()["data"] == data_flag
         newItemName = generate_random_string(10)
         item_sql = sql.SQL("SELECT 1 FROM {} where {}!=%s and {}=%s").format(
             sql.Identifier(tableName),

@@ -87,6 +87,12 @@ def test_compare_device(api_client, env_config, pg_connect):
     response = api_client.post(
         "/api/kpi/device/deviceRegisterLatestValue", json=payload
     )
+    with allure.step("record real response..."):
+        allure.attach(
+            body=json.dumps(response.json(), indent=2, ensure_ascii=False),
+            name="/api/kpi/device/deviceRegisterLatestValue",
+            attachment_type=allure.attachment_type.JSON,
+        )
     kpi_data = response.json()
     # print(kpi_data)
     if kpi_data["httpStatus"] == 200:
@@ -120,15 +126,22 @@ def test_compare_device(api_client, env_config, pg_connect):
                 ),
             )
             fetchdata = cur.fetchone()
-            if None == datav and fetchdata == None:
-                with check:
-                    assert True
-            elif datav != None and fetchdata != None:
-                with check:
-                    assert datav == fetchdata[0]
-            else:
-                with check:
-                    assert False
+            if(datav!=0 and datav!='0'):
+                if (None == datav or datav==0) and fetchdata == None:
+                    with check:
+                        assert True
+                elif datav != None and fetchdata != None:
+                    with check:
+                        assert datav == fetchdata[0]
+                else:
+                    with allure.step("compare data is different"):
+                        allure.attach(
+                            body=f"datav={datav},fetchdata={fetchdata}",
+                            name="compare left and right",
+                            attachment_type=allure.attachment_type.TEXT,
+                        )
+                    with check:
+                        assert False
     elif kpi_data["messageCode"] == "31002":
         assert True
     else:

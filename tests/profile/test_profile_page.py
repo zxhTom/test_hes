@@ -164,7 +164,7 @@ def test_find_profile_data_extends_field(
                     response.json()["httpStatus"] == 500
                     and response.json()["messageCode"] == "38007"
                 )
-
+            check_page_lines_coordinate_profile_authority(template,response.json())
             template["meterIds"] = meters
             configuration_params["deviceIdList"] = meters
 
@@ -215,3 +215,13 @@ def test_find_profile_data_extends_field(
                     response.json()["httpStatus"] == 500
                     and response.json()["messageCode"] == "38007"
                 )
+
+def check_page_lines_coordinate_profile_authority(param_data,res_data):
+    param_data={
+        "orgNo":"",
+        "meterIds":"",
+        "tmnlIds":"",
+        "groupIds":"",
+        "startTime":"",
+        "endTime":""
+    }

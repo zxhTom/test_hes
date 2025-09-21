@@ -6,6 +6,7 @@ import redis
 import json
 from test_reporter.reporter import TestReporter
 import random
+from functools import wraps
 
 pytest_plugins = [
     "fixtures.database",  # 自动发现 fixtures/database.py 中的 Fixture
@@ -81,6 +82,9 @@ class TokenManager:
             return r.get(mkeys[0])
         else:
             return ""
+    def _delete_token(self):
+        os.remove(self._token_file)
+        self._token=None
 
     def _is_token_expired(self):
         """检查 token 是否过期（简化实现）"""
@@ -100,6 +104,19 @@ def token_manager(env_config):
 def api_client(env_config, token_manager):
     """返回配置好的 API 客户端"""
 
+    def handle_unauthorized(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            response = func(*args, **kwargs)
+            if response.json()["httpStatus"] == 401:
+                print("检测到 401 未授权错误")
+                # 这里可以添加你的处理逻辑，比如刷新 token、重新登录等
+                # handle_authentication()  # 你的认证处理函数
+                token_manager._delete_token()
+                response = func(*args, **kwargs)
+            return response
+        return wrapper
+
     class APIClient:
         def __init__(self, base_url, token_manager):
             self.base_url = base_url
@@ -110,10 +127,11 @@ def api_client(env_config, token_manager):
             headers["Authorization"] = f"Bearer {self.token_manager.get_token()}"
             return requests.get(f"{self.base_url}{path}", headers=headers, **kwargs)
 
+        @handle_unauthorized
         def post(self, path, **kwargs):
             headers = kwargs.pop("headers", {})
             headers["Authorization"] = f"Bearer {self.token_manager.get_token()}"
-            headers["Accept-Language"] = f"es-es"
+            headers["Accept-Language"] = f"en-us"
             return requests.post(f"{self.base_url}{path}", headers=headers, **kwargs)
 
     return APIClient(env_config["base_url"], token_manager)

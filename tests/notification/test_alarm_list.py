@@ -7,7 +7,7 @@ import jmespath
 import random
 
 eventalarmgroups = [
-    # ("/api/meters/alarmEnventDeviceListPage", "/api/meters/alarmEnventDeviceDetails"),
+    ("/api/meters/alarmEnventDeviceListPage", "/api/meters/alarmEnventDeviceDetails"),
     (
         "/api/tmnl-run/alarmEnventDeviceListPage",
         "/api/tmnl-run/alarmEnventDeviceDetails",

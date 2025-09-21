@@ -39,6 +39,7 @@ def test_get_cycle(
     for commtype in commtypes:
         for before in generate_test_pairs:
             before["commType"] = commtype
+            before.pop('deviceType', None)
             print(before)
             meter_param.update(before)
             print(meter_param)
@@ -70,7 +71,7 @@ def test_get_cycle(
             with allure.step("meter param payload"):
                 allure.attach(
                     body=json.dumps(meter_param, indent=2, ensure_ascii=False),
-                    name=targeturl,
+                    name="/api/meters/loadDeviceInfoAndOnlineStatus",
                     attachment_type=allure.attachment_type.JSON,
                 )
             response = api_client.post(
@@ -89,13 +90,13 @@ def test_get_cycle(
             with allure.step("meter response"):
                 allure.attach(
                     body=json.dumps(response.json(), indent=2, ensure_ascii=False),
-                    name=targeturl,
+                    name="/api/meters/loadDeviceInfoAndOnlineStatus",
                     attachment_type=allure.attachment_type.JSON,
                 )
             with allure.step("tmnl response"):
                 allure.attach(
                     body=json.dumps(rresponse.json(), indent=2, ensure_ascii=False),
-                    name=targeturl,
+                    name="/api/tmnl-run/page",
                     attachment_type=allure.attachment_type.JSON,
                 )
             meterOnlineTotal = response.json()["data"].get("total")
